@@ -25,6 +25,11 @@ Instantiate the client
 ```ruby
 require 'qtb_client'
 
+ip   = 'http://127.0.0.1' # Protocol is required.
+port = 8083
+user = 'admin'
+pass = 'abc'
+
 client = QtbClient::Client.new(ip, port, user, pass)
 ```
 
@@ -34,10 +39,17 @@ Call methods on the client
 # Get list of torrents:
 torrents = client.torrent_list
 
-# Using each torrent's hash, get more data about the torrent:
-torrent_data = []
+
+torrent_properties = {}
+
+# Using each torrent's hash, get the torrents properties:
 torrents.each do |t|
-  torrent_data << client.torrent_data t['hash']
+  hash = t['hash']
+
+  torrent_properties[hash] = client.properties hash
+
+  # Get the torrent's trackers too
+  torrent_properties[hash]['trackers'] = client.trackers hash
 end
 ```
 
@@ -57,7 +69,7 @@ From the root project dir, run:
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/qbt_client/fork )
+1. Fork it ( https://github.com/jmcaffee/qbt_client/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Create your tests
 4. Commit your changes (`git commit -am 'Add some feature'`)

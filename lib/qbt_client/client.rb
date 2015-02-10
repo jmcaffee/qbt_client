@@ -19,40 +19,21 @@ module QbtClient
 
     #debug_output $stdout
 
-    attr_accessor :result
-    attr_reader   :response
-    attr_reader   :torrents
-    attr_reader   :rssfeeds
-    attr_reader   :rssfilters
-    attr_reader   :settings
-
     ###
-    # Processor constructor
+    # constructor
     #
     def initialize(ip, port, user, pass)
       @ip         = ip
       @port       = port
       @user       = user
       @pass       = pass
-      #@base_url   = "/gui/?"
-      #@url        = ""
-      #@result     = nil
-      #@http       = nil
-      #@token      = nil
-      #@settings   = Array.new
-      #@torrentc   = nil
-
-      #@torrents         = Hash.new
-      #@torrents_removed = Hash.new
-      #@rssfeeds         = Hash.new
-      #@rssfilters       = Hash.new
 
       self.class.digest_auth(user, pass)
       self.class.base_uri "#{ip}:#{port}"
     end
 
     ###
-    # Connect to app
+    # Get array of all torrents
     #
     def torrent_list
       self.class.format :json
@@ -60,15 +41,10 @@ module QbtClient
     end
 
     def torrent_data torrent_hash
-      #puts "In #torrent_data searching for #{torrent_hash}"
       torrents = torrent_list
-      #puts 'torrents:'
+
       torrents.each do |t|
-        #puts t.inspect
         if t["hash"] == torrent_hash
-          #puts "hash found: #{torrent_hash}"
-          #puts "data:"
-          #puts t.inspect
           return t
         end
       end
