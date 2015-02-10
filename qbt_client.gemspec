@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'qbittorrent/version'
+require 'qbt_client/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "qbittorrent"
-  spec.version       = Qbittorrent::VERSION
+  spec.name          = "qbt_client"
+  spec.version       = QbtClient::VERSION
   spec.authors       = ["Jeff McAffee"]
   spec.email         = ["jeff@ktechsystems.com"]
   spec.summary       = %q{qBittorent client}

@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Qbittorrent do
+describe QbtClient do
   it 'has a version number' do
-    expect(Qbittorrent::VERSION).not_to be nil
+    expect(QbtClient::VERSION).not_to be nil
   end
 
   it 'does something useful' do
