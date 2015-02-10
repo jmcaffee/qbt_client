@@ -30,7 +30,7 @@ port = 8083
 user = 'admin'
 pass = 'abc'
 
-client = QtbClient::Client.new(ip, port, user, pass)
+client = QtbClient::WebUI.new(ip, port, user, pass)
 ```
 
 Call methods on the client

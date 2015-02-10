@@ -1,5 +1,5 @@
 ##############################################################################
-# File::    client.rb
+# File::    web_ui.rb
 # Purpose:: Web UI client for qBittorrent.
 #
 # Author::    Jeff McAffee 2015-02-07
@@ -14,7 +14,7 @@ require 'digest'
 
 module QbtClient
 
-  class Client
+  class WebUI
     include HTTParty
 
     #debug_output $stdout

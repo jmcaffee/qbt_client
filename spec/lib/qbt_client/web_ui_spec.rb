@@ -1,7 +1,7 @@
 require 'spec_helper'
 include QbtClient
 
-describe Client do
+describe WebUI do
 
   let(:example_torrent_data) {
     [
@@ -41,7 +41,7 @@ describe Client do
     it "returns array of torrents" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       list = client.torrent_list
 
       expect(list.class).to eq Array
@@ -54,7 +54,7 @@ describe Client do
     it "returns data for a specific torrent in Hash object" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       data = client.torrent_data hash
 
       expect(data.class).to eq Hash
@@ -84,7 +84,7 @@ describe Client do
     it "returns torrent properties in Hash object" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.properties hash
 
       expect(res.class).to eq Hash
@@ -122,7 +122,7 @@ describe Client do
     it "returns tracker data in Array of Hashes" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.trackers hash
 
       expect(res.class).to eq Array
@@ -157,7 +157,7 @@ describe Client do
     it "returns Array of Hashes, one for each file in torrent" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.contents hash
 
       expect(res.class).to eq Array
@@ -179,7 +179,7 @@ describe Client do
     it "returns hash" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.transfer_info
 
       expect(res.class).to eq Hash
@@ -266,7 +266,7 @@ describe Client do
   context "#preferences" do
 
     it "returns hash" do
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.preferences
 
       expect(res.class).to eq Hash
@@ -283,7 +283,7 @@ describe Client do
     }
 
     it "sets preferences when provided a valid hash" do
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       orig_save_path = client.preferences['save_path']
 
       res = client.preferences = { "save_path"=>save_path }
@@ -297,7 +297,7 @@ describe Client do
     end
 
     it "fails when not provided a Hash" do
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       expect{ client.preferences = "\"save_path\":\"#{save_path}\"" }.to raise_exception
     end
   end
@@ -307,7 +307,7 @@ describe Client do
     it "pauses a torrent" do
       hash, name = given_a_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.pause hash
       # Give app a chance to update
       sleep 2
@@ -323,7 +323,7 @@ describe Client do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.pause_all
       # Give app a chance to update
       sleep 2
@@ -346,7 +346,7 @@ describe Client do
     it "resumes a paused torrent" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.resume hash
       # Give app a chance to update
       sleep 2
@@ -365,7 +365,7 @@ describe Client do
       hash, name = given_a_paused_downloading_torrent
       hash2, name2 = given_another_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.resume_all
       # Give app a chance to update
       sleep 2
@@ -387,7 +387,7 @@ describe Client do
   context "#download" do
 
     it "downloads a torrent" do
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       res = client.download test_torrent_url
       # Give app a chance to update
@@ -415,7 +415,7 @@ describe Client do
     it "deletes one or more torrents and their data" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       res = client.delete_torrent_and_data hash
       # Give app a chance to update
@@ -431,7 +431,7 @@ describe Client do
     it "deletes one or more torrents, but not their data" do
       hash, name = given_a_paused_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       res = client.delete hash
       # Give app a chance to update
@@ -449,7 +449,7 @@ describe Client do
       # Pause so the download can get going.
       sleep 5
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       res = client.recheck hash
       # Give app a chance to update
@@ -470,7 +470,7 @@ describe Client do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
@@ -499,7 +499,7 @@ describe Client do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
@@ -528,7 +528,7 @@ describe Client do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
@@ -557,7 +557,7 @@ describe Client do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
@@ -649,7 +649,7 @@ describe Client do
       #hash, name = given_a_downloading_torrent
 
 
-      client = Client.new(test_ip, test_port, test_user, test_pass)
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
       hash = hash_from_torrent_name client, test_torrent_name
       res = client.pause hash
       # Give app a chance to update

@@ -75,7 +75,7 @@ def delete_torrent_with_name client, name
 end
 
 def download_torrent name, url
-  client = QbtClient::Client.new(test_ip, test_port, test_user, test_pass)
+  client = QbtClient::WebUI.new(test_ip, test_port, test_user, test_pass)
 
   # If we're already downloading the torrent, delete it
   delete_torrent_with_name client, name
@@ -91,7 +91,7 @@ def download_torrent name, url
 end
 
 def download_and_pause_torrent name, url
-  client = QbtClient::Client.new(test_ip, test_port, test_user, test_pass)
+  client = QbtClient::WebUI.new(test_ip, test_port, test_user, test_pass)
 
   # If we're already downloading the torrent, just pause it and return its data
   hash = hash_from_torrent_name client, name
