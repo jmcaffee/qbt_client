@@ -1,13 +1,13 @@
-# Qbittorrent
+# QbtClient
 
-TODO: Write a gem description
+A Ruby based client gem to access qBittorrent's WebUI
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'qbittorrent'
+gem 'qbt_client'
 ```
 
 And then execute:
@@ -16,7 +16,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install qbittorrent
+    $ gem install qbt_client
 
 ## Usage
 
