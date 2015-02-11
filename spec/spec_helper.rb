@@ -146,5 +146,16 @@ def md5 str
 end
 
 def enable_queueing client, enable
-  client.preferences = { "queueing_enabled" => enable }
+  client.set_preferences({ "queueing_enabled" => enable })
 end
+
+def delete_all_torrents
+  client = QbtClient::WebUI.new(test_ip, test_port, test_user, test_pass)
+  torrents = client.torrent_list
+  hash = nil
+
+  torrents.each do |t|
+    client.delete_torrent_and_data t["hash"]
+  end
+end
+

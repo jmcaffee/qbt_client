@@ -3,38 +3,10 @@ include QbtClient
 
 describe WebUI do
 
-  let(:example_torrent_data) {
-    [
-      {
-          "dlspeed"=>"3.1 MiB/s",
-          "eta"=>"9m",
-          "hash"=>"156b69b8643bd11849a5d8f2122e13fbb61bd041",
-          "name"=>"slackware64-14.1-iso",
-          "num_leechs"=>"1 (14)",
-          "num_seeds"=>"97 (270)",
-          "priority"=>"*",
-          "progress"=>0.172291,
-          "ratio"=>"0.0",
-          "size"=>"2.2 GiB",
-          "state"=>"downloading",
-          "upspeed"=>"0 B/s"
-      },
-      {
-        "dlspeed"=>"1.8 KiB/s",
-        "eta"=>"28d 1h",
-        "hash"=>"1fe5775d32d3e58e48b3a96dd2883c5250882cda",
-        "name"=>"Grimm.S04E12.720p.HDTV.X264-DIMENSION.mkv",
-        "num_leechs"=>"7 (471)",
-        "num_seeds"=>"15 (1866)",
-        "priority"=>"*",
-        "progress"=>1.53669e-07,
-        "ratio"=>"0.0",
-        "size"=>"825.4 MiB",
-        "state"=>"downloading",
-        "upspeed"=>"0 B/s"
-      }
-    ]
-  }
+  after(:all) do
+    delete_all_torrents
+    sleep 1
+  end
 
   context "#torrent_list" do
 
@@ -62,27 +34,11 @@ describe WebUI do
     end
   end
 
-  let(:example_torrent_general_properties) {
-    {
-      "comment"=>"Visit us: https://eztv.ch/ - Bitcoin: 1EZTVaGQ6UsjYJ9fwqGnd45oZ6HGT7WKZd",
-      "creation_date"=>"Friday, February 6, 2015 8:01:22 PM MST",
-      "dl_limit"=>"∞",
-      "nb_connections"=>"0 (100 max)",
-      "piece_size"=>"512.0 KiB",
-      "save_path"=>"/home/jeff/Downloads/",
-      "share_ratio"=>"0.0",
-      "time_elapsed"=>"< 1m",
-      "total_downloaded"=>"646.8 KiB (657.8 KiB this session)",
-      "total_uploaded"=>"0 B (0 B this session)",
-      "total_wasted"=>"428 B",
-      "up_limit"=>"∞"
-    }
-  }
-
   context "#properties" do
 
     it "returns torrent properties in Hash object" do
       hash, name = given_a_paused_downloading_torrent
+      sleep 1
 
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.properties hash
@@ -91,31 +47,6 @@ describe WebUI do
       expect(res['save_path']).to_not eq nil
     end
   end
-
-  let(:example_tracker_data) {
-    [
-      {
-        "msg"=>"",
-        "num_peers"=>"0",
-        "status"=>"Working",
-        "url"=>"udp://open.demonii.com:1337"},
-      {
-        "msg"=>"",
-        "num_peers"=>"0",
-        "status"=>"Not contacted yet",
-        "url"=>"udp://tracker.coppersurfer.tk:6969"},
-      {
-        "msg"=>"",
-        "num_peers"=>"0",
-        "status"=>"Not contacted yet",
-        "url"=>"udp://tracker.leechers-paradise.org:6969"},
-      {
-        "msg"=>"",
-        "num_peers"=>"0",
-        "status"=>"Not contacted yet",
-        "url"=>"udp://exodus.desync.com:6969"}
-    ]
-  }
 
   context "#trackers" do
 
@@ -135,22 +66,68 @@ describe WebUI do
 
   context "#add_trackers" do
 
-    it "add one or more trackers to a torrent" do
-      expect(false).to eq true
+    it "add one tracker to a torrent" do
+      hash, name = given_a_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      trackers = client.trackers hash
+      tcount = trackers.count
+
+      url = 'http://announce.tracker.com'
+
+      client.add_trackers hash, url
+      sleep 2
+
+      trackers = client.trackers hash
+      expect(trackers.count).to eq (tcount + 1)
+
+      expect(trackers[tcount]['url']).to eq url
+    end
+
+    it "add multiple trackers to a torrent" do
+      hash, name = given_a_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      trackers = client.trackers hash
+      tcount = trackers.count
+
+      url1 = 'http://announce.tracker.com:1000'
+      url2 = 'http://announce.tracker.com:2000'
+      url3 = 'http://announce.tracker.com:3000'
+
+      client.add_trackers hash, [url1, url2, url3]
+      sleep 2
+
+      trackers = client.trackers hash
+      expect(trackers.count).to eq (tcount + 3)
+
+      expect(trackers[tcount]['url']).to eq url1
+      expect(trackers[tcount+1]['url']).to eq url2
+      expect(trackers[tcount+2]['url']).to eq url3
+    end
+
+    it "ampersands in tracker urls are escaped" do
+      hash, name = given_a_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      trackers = client.trackers hash
+      tcount = trackers.count
+
+      url1 = 'http://announce.tracker.com:1000?blah&blah'
+      url2 = 'http://announce.tracker.com:2000?foo&foo'
+      url3 = 'http://announce.tracker.com:3000?bar&bar'
+
+      client.add_trackers hash, [url1, url2, url3]
+      sleep 2
+
+      trackers = client.trackers hash
+      expect(trackers.count).to eq (tcount + 3)
+
+      expect(trackers[tcount]['url']).to eq url1
+      expect(trackers[tcount+1]['url']).to eq url2
+      expect(trackers[tcount+2]['url']).to eq url3
     end
   end
-
-  let(:example_contents_data) {
-    [
-      {
-        "is_seed"=>false,
-        "name"=>"Grimm.S04E12.720p.HDTV.X264-DIMENSION.mkv",
-        "priority"=>1,
-        "progress"=>0.0,
-        "size"=>"825.4 MiB"
-      }
-    ]
-  }
 
   context "#contents" do
 
@@ -167,13 +144,6 @@ describe WebUI do
     end
   end
 
-  let(:example_transfer_data) {
-    {
-      "dl_info"=>"D: 0 B/s/s - T: 657.8 KiB",
-      "up_info"=>"U: 0 B/s/s - T: 0 B"
-    }
-  }
-
   context "#transfer_info" do
 
     it "returns hash" do
@@ -188,81 +158,6 @@ describe WebUI do
     end
   end
 
-  let(:example_preferences_data) {
-    {
-      "alt_dl_limit"=>10,
-      "alt_up_limit"=>10,
-      "anonymous_mode"=>false,
-      "autorun_enabled"=>false,
-      "autorun_program"=>"",
-      "bypass_local_auth"=>false,
-      "dht"=>true,
-      "dhtSameAsBT"=>true,
-      "dht_port"=>6881,
-      "dl_limit"=>-1,
-      "dont_count_slow_torrents"=>false,
-      "download_in_scan_dirs"=>[],
-      "dyndns_domain"=>"changeme.dyndns.org",
-      "dyndns_enabled"=>false,
-      "dyndns_password"=>"",
-      "dyndns_service"=>0,
-      "dyndns_username"=>"",
-      "enable_utp"=>true,
-      "encryption"=>0,
-      "export_dir"=>"",
-      "export_dir_enabled"=>false,
-      "incomplete_files_ext"=>false,
-      "ip_filter_enabled"=>false,
-      "ip_filter_path"=>"",
-      "limit_tcp_overhead"=>false,
-      "limit_utp_rate"=>true,
-      "listen_port"=>6881,
-      "locale"=>"en_US",
-      "lsd"=>true,
-      "mail_notification_auth_enabled"=>false,
-      "mail_notification_email"=>"",
-      "mail_notification_enabled"=>false,
-      "mail_notification_password"=>"",
-      "mail_notification_smtp"=>"smtp.changeme.com",
-      "mail_notification_ssl_enabled"=>false,
-      "mail_notification_username"=>"",
-      "max_active_downloads"=>3,
-      "max_active_torrents"=>5,
-      "max_active_uploads"=>3,
-      "max_connec"=>500,
-      "max_connec_per_torrent"=>100,
-      "max_uploads_per_torrent"=>4,
-      "pex"=>true,
-      "preallocate_all"=>false,
-      "proxy_auth_enabled"=>false,
-      "proxy_ip"=>"0.0.0.0",
-      "proxy_password"=>"",
-      "proxy_peer_connections"=>false,
-      "proxy_port"=>8080,
-      "proxy_type"=>-1,
-      "proxy_username"=>"",
-      "queueing_enabled"=>false,
-      "save_path"=>"/home/jeff/Downloads",
-      "scan_dirs"=>[],
-      "schedule_from_hour"=>8,
-      "schedule_from_min"=>0,
-      "schedule_to_hour"=>20,
-      "schedule_to_min"=>0,
-      "scheduler_days"=>0,
-      "scheduler_enabled"=>false,
-      "ssl_cert"=>"",
-      "ssl_key"=>"",
-      "temp_path"=>"/home/jeff/Downloads/temp",
-      "temp_path_enabled"=>false,
-      "up_limit"=>50,
-      "upnp"=>true,
-      "use_https"=>false,
-      "web_ui_password"=>"ae150cdc82b40c4373d2e15e0ffe8f67",
-      "web_ui_port"=>8083,
-      "web_ui_username"=>"admin"
-    }
-  }
-
   context "#preferences" do
 
     it "returns hash" do
@@ -276,7 +171,7 @@ describe WebUI do
     end
   end
 
-  context "#preferences=" do
+  context "#set_preferences" do
 
     let(:save_path) {
       "/home/jeff/projects/ruby/qbittorrent/tmp/spec/client"
@@ -286,19 +181,19 @@ describe WebUI do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       orig_save_path = client.preferences['save_path']
 
-      res = client.preferences = { "save_path"=>save_path }
+      res = client.set_preferences({ "save_path"=>save_path })
 
       # Read preferences back and verify update
       res = client.preferences
       expect(res["save_path"]).to eq save_path
 
       # Set the save_path back to original value
-      res = client.preferences = { "save_path"=>orig_save_path }
+      res = client.set_preferences({ "save_path"=>orig_save_path })
     end
 
     it "fails when not provided a Hash" do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
-      expect{ client.preferences = "\"save_path\":\"#{save_path}\"" }.to raise_exception
+      expect{ client.set_preferences("\"save_path\":\"#{save_path}\"") }.to raise_exception
     end
   end
 
@@ -406,7 +301,8 @@ describe WebUI do
   context "#upload" do
 
     it "upload a torrent from disk" do
-      expect(false).to eq true
+      pending('implementation')
+      fail
     end
   end
 
@@ -583,81 +479,164 @@ describe WebUI do
   context "#set_file_priority" do
 
     it "set a file's priority (within a torrent)" do
-      expect(false).to eq true
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      files = client.contents hash
+
+      # Set priority for each file in torrent.
+      # Priority will equal its position +1.
+      files.each_with_index do |f,i|
+        client.set_file_priority hash, i, (i+1)
+      end
+      sleep 2
+
+      # Verify each file's priority matches its position +1
+      files = client.contents hash
+      files.each_with_index do |f,i|
+        prio = i + 1
+        expect( f['priority'] == prio ).to eq true
+      end
+
+      # Clean up
+      client.delete_torrent_and_data hash
     end
   end
 
   context "#global_download_limit" do
 
-    it "return the global download limit" do
-      expect(false).to eq true
+    it "return the global download limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      limit = client.global_download_limit
+
+      expect(limit.integer?).to eq true
     end
   end
 
-  context "#global_download_limit=" do
+  context "#set_global_download_limit" do
 
-    it "set the global download limit" do
-      expect(false).to eq true
+    it "set the global download limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.global_download_limit
+
+      expected_limit = 1000
+      client.set_global_download_limit expected_limit
+
+      actual_limit = client.global_download_limit
+
+      expect(expected_limit == actual_limit).to eq true
+
+      # Clean up
+      client.set_global_download_limit old_limit
     end
   end
 
   context "#global_upload_limit" do
 
-    it "return the global upload limit" do
-      expect(false).to eq true
+    it "return the global upload limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      limit = client.global_upload_limit
+
+      expect(limit.integer?).to eq true
     end
   end
 
-  context "#global_upload_limit=" do
+  context "#set_global_upload_limit" do
 
-    it "set the global upload limit" do
-      expect(false).to eq true
+    it "set the global upload limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.global_upload_limit
+
+      expected_limit = 1000
+      client.set_global_upload_limit expected_limit
+
+      actual_limit = client.global_upload_limit
+
+      expect(expected_limit == actual_limit).to eq true
+
+      # Clean up
+      client.set_global_upload_limit old_limit
     end
   end
 
   context "#download_limit" do
 
-    it "return the torrent download limit" do
-      expect(false).to eq true
+    it "return the torrent download limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      limit = client.download_limit hash
+
+      expect(limit.integer?).to eq true
     end
   end
 
-  context "#download_limit=" do
+  context "#set_download_limit" do
 
-    it "set the torrent download limit" do
-      expect(false).to eq true
+    it "set the torrent download limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.download_limit hash
+
+      expected_limit = 1000
+      client.set_download_limit hash, expected_limit
+
+      actual_limit = client.download_limit hash
+
+      expect(expected_limit == actual_limit).to eq true
+
+      # Clean up
+      client.set_download_limit hash, old_limit
     end
   end
 
   context "#upload_limit" do
 
-    it "return the torrent upload limit" do
-      expect(false).to eq true
-    end
-  end
-
-  context "#upload_limit=" do
-
-    it "set the torrent upload limit" do
-      expect(false).to eq true
-    end
-  end
-
-  context "test" do
-
-    it "tests a torrent" do
-      #hash, name = given_a_downloading_torrent
-
-
+    it "return the torrent upload limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
-      hash = hash_from_torrent_name client, test_torrent_name
-      res = client.pause hash
-      # Give app a chance to update
-      sleep 2
+      limit = client.upload_limit hash
 
-      data = client.torrent_data hash
-      print_response data
-      #expect(data["state"]).to eq 'pausedDL'
+      expect(limit.integer?).to eq true
     end
   end
+
+  context "#set_upload_limit" do
+
+    it "set the torrent upload limit in bytes" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.upload_limit hash
+
+      expected_limit = 1000
+      client.set_upload_limit hash, expected_limit
+
+      actual_limit = client.upload_limit hash
+
+      expect(expected_limit == actual_limit).to eq true
+
+      # Clean up
+      client.set_upload_limit hash, old_limit
+    end
+  end
+
+  #context "test" do
+
+  #  it "tests a torrent" do
+  #    #hash, name = given_a_downloading_torrent
+
+
+  #    client = WebUI.new(test_ip, test_port, test_user, test_pass)
+  #    hash = hash_from_torrent_name client, test_torrent_name
+  #    res = client.pause hash
+  #    # Give app a chance to update
+  #    sleep 2
+
+  #    data = client.torrent_data hash
+  #    print_response data
+  #    #expect(data["state"]).to eq 'pausedDL'
+  #  end
+  #end
 end
