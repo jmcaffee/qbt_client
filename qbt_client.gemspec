@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["jeff@ktechsystems.com"]
   spec.summary       = %q{qBittorent client}
   spec.description   = %q{qBittorrent client}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/jmcaffee/qbt_client"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
