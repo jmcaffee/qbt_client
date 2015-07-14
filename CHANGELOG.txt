@@ -1,0 +1,46 @@
+* Unreleased - v1.0.0
+  - Add support for qBitTorrent v3.2.x (WebUI API v2)
+    - CONTAINS BREAKING CHANGES!
+  - Change authentication method from Digest Auth to Cookie based Auth
+  - Add #login method supporting cookie based authentication
+  - Change /json/... urls to /query/... urls
+  - /command/getTorrentDlLimit url changed to /command/getTorrentsDlLimit
+    - now supports retrieval of multiple torrent download limits
+    - Add #get_download_limits method
+  - /command/setTorrentDlLimit url changed to /command/setTorrentsDlLimit
+    - now supports setting of multiple torrent download limits
+    - Add #set_download_limits method
+  - /command/getTorrentUpLimit url changed to /command/getTorrentsUpLimit
+    - now supports retrieval of multiple torrent upload limits
+    - Add #get_upload_limits method
+  - /command/setTorrentUpLimit url changed to /command/setTorrentsUpLimit
+    - now supports setting of multiple torrent upload limits
+    - Add #set_upload_limits method
+  - #transfer_info hash changes
+    - previous values:
+      - dl_info
+      - up_info
+    - new values:
+      - dl_info_speed
+      - dl_info_data
+      - up_info_speed
+      - up_info_data
+      - dl_rate_limit
+      - up_rate_limit
+      - dht_nodes
+      - connection_status
+        - connected
+        - firewalled
+        - disconnected
+  - torrent data hash from #torrent_list now returns -1 instead of "*" for priority (integer instead of string)
+  - Add #api_version      : returns string. Ex: "2"
+  - Add #api_min_version  : returns string. Ex: "2"
+  - Add #app_version      : returns string. Ex: "v3.2.0"
+  - Add #get_partial_update
+  - Add #set_force_start
+  - Add #toggle_first_last_piece_priority
+  - Add #toggle_sequential_download
+  - Add support for filtering options on #torrent_list
+
+* Feb 11, 2015 - v0.1.0
+  - Initial implementation supporting qBitTorrent v3.1.x
