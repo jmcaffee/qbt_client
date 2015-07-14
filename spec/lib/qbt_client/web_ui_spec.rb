@@ -12,12 +12,59 @@ describe WebUI do
 
     it "returns array of torrents" do
       hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
 
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       list = client.torrent_list
 
       expect(list.class).to eq Array
-      expect(list[0]['dlspeed']).to_not eq nil
+      expect(list.first['dlspeed']).to_not eq nil
+      expect(list.count).to eq 2
+    end
+
+    it "supports filtering with :filter, :sort and :reverse" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      list = client.torrent_list :filter => "pausedDL", :sort => "size", :reverse => true
+
+      expect(list.class).to eq Array
+      expect(list[0]['name']).to include "KNOPPIX"
+    end
+
+    it "supports filtering with :limit" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      list = client.torrent_list :filter => "all", :limit => 1
+
+      expect(list.class).to eq Array
+      expect(list.count).to eq 1
+    end
+
+    it "supports filtering with :offset" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      list = client.torrent_list :filter => "all", :limit => 1, :offset => 1
+
+      expect(list.class).to eq Array
+      expect(list.count).to eq 1
+      expect(list.first['name']).to include "KNOPPIX"
+    end
+
+    it "supports filtering with :label where '' means unlabeled" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      list = client.torrent_list :filter => "all", :label => ""
+
+      expect(list.class).to eq Array
+      expect(list.count).to eq 2
     end
   end
 
@@ -31,6 +78,32 @@ describe WebUI do
 
       expect(data.class).to eq Hash
       expect(data["name"].include?(name)).to eq true
+    end
+  end
+
+  context "#get_partial_data" do
+
+    it "returns information about the server/torrents since the last request" do
+      hash, name = given_a_downloading_torrent
+      hash2, name2 = given_another_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      data1 = client.get_partial_data
+      expect(data1["rid"]).to eq 1
+      expect(data1["full_update"]).to eq true
+
+      sleep 2
+
+      data2 = client.get_partial_data
+      expect(data2["rid"]).to eq 2
+      expect(data2["full_update"]).to eq nil
+
+      sleep 2
+
+      # We can reset the rid and force a full update:
+      data3 = client.get_partial_data 0
+      expect(data3["rid"]).to eq 1
+      expect(data3["full_update"]).to eq true
     end
   end
 
@@ -153,8 +226,14 @@ describe WebUI do
       res = client.transfer_info
 
       expect(res.class).to eq Hash
-      expect(res['dl_info']).to_not eq nil
-      expect(res['up_info']).to_not eq nil
+      expect(res['dl_info_speed']).to_not eq nil
+      expect(res['dl_info_data']).to_not eq nil
+      expect(res['up_info_speed']).to_not eq nil
+      expect(res['up_info_data']).to_not eq nil
+      expect(res['dl_rate_limit']).to_not eq nil
+      expect(res['up_rate_limit']).to_not eq nil
+      expect(res['dht_nodes']).to_not eq nil
+      expect(%q(connected firewalled disconnected)).to include res['connection_status']
     end
   end
 
@@ -217,11 +296,12 @@ describe WebUI do
     it "pauses all torrents" do
       hash, name = given_a_downloading_torrent
       hash2, name2 = given_another_downloading_torrent
+      sleep 10
 
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.pause_all
       # Give app a chance to update
-      sleep 2
+      sleep 4
 
       data = client.torrent_data hash
       #print_response data
@@ -426,7 +506,7 @@ describe WebUI do
 
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
-      # Turn on queueing or priority is always '*'.
+      # Turn on queueing or priority is always '-1'.
       enable_queueing client, true
       sleep 2
 
@@ -443,7 +523,11 @@ describe WebUI do
       # Turn queueing back off.
       enable_queueing client, false
 
-      expect(prio_after_increase == '1').to eq true
+      expect(prio_after_increase < prio).to eq true
+
+      # Verify we have valid values
+      expect(prio_after_increase).to_not eq -1
+      expect(prio).to_not eq -1
     end
   end
 
@@ -455,7 +539,7 @@ describe WebUI do
 
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
 
-      # Turn on queueing or priority is always '*'.
+      # Turn on queueing or priority is always '-1'.
       enable_queueing client, true
       sleep 2
 
@@ -472,7 +556,11 @@ describe WebUI do
       # Turn queueing back off.
       enable_queueing client, false
 
-      expect(prio_after_decrease == '2').to eq true
+      expect(prio_after_decrease > prio).to eq true
+
+      # Verify we have valid values
+      expect(prio_after_decrease).to_not eq -1
+      expect(prio).to_not eq -1
     end
   end
 
@@ -573,6 +661,20 @@ describe WebUI do
     end
   end
 
+  context "#download_limits" do
+
+    it "return download limits in bytes for multiple torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      limits = client.download_limits [hash, hash2]
+
+      expect(limits[hash].integer?).to eq true
+      expect(limits[hash2].integer?).to eq true
+    end
+  end
+
   context "#set_download_limit" do
 
     it "set the torrent download limit in bytes" do
@@ -580,7 +682,7 @@ describe WebUI do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       old_limit = client.download_limit hash
 
-      expected_limit = 1000
+      expected_limit = 123456
       client.set_download_limit hash, expected_limit
 
       actual_limit = client.download_limit hash
@@ -592,6 +694,30 @@ describe WebUI do
     end
   end
 
+  context "#set_download_limits" do
+
+    it "set the download limits in bytes for multiple torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.download_limit hash
+      old_limit2 = client.download_limit hash2
+
+      expected_limit = 123456
+      client.set_download_limits([hash, hash2], expected_limit)
+
+      actual_limit = client.download_limit hash
+      actual_limit2 = client.download_limit hash2
+
+      expect(expected_limit == actual_limit).to eq true
+      expect(expected_limit == actual_limit2).to eq true
+
+      # Clean up
+      client.set_download_limits([hash, hash2], old_limit)
+    end
+  end
+
   context "#upload_limit" do
 
     it "return the torrent upload limit in bytes" do
@@ -600,6 +726,20 @@ describe WebUI do
       limit = client.upload_limit hash
 
       expect(limit.integer?).to eq true
+    end
+  end
+
+  context "#upload_limits" do
+
+    it "return upload limits in bytes for multiple torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      limits = client.upload_limits [hash, hash2]
+
+      expect(limits[hash].integer?).to eq true
+      expect(limits[hash2].integer?).to eq true
     end
   end
 
@@ -619,6 +759,105 @@ describe WebUI do
 
       # Clean up
       client.set_upload_limit hash, old_limit
+    end
+  end
+
+  context "#set_upload_limits" do
+
+    it "set the upload limits in bytes for multiple torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      old_limit = client.upload_limit hash
+      old_limit2 = client.upload_limit hash2
+
+      expected_limit = 123456
+      client.set_upload_limits([hash, hash2], expected_limit)
+
+      actual_limit = client.upload_limit hash
+      actual_limit2 = client.upload_limit hash2
+
+      expect(expected_limit == actual_limit).to eq true
+      expect(expected_limit == actual_limit2).to eq true
+
+      # Clean up
+      client.set_upload_limits([hash, hash2], old_limit)
+    end
+  end
+
+  context "#toggle_sequential_download" do
+
+    it "turn on sequential download for multiple torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+
+      data = client.torrent_list
+
+      expect(data.first['seq_dl']).to eq false
+      expect(data.last['seq_dl']).to eq false
+
+      client.toggle_sequential_download [hash, hash2]
+
+      data = client.torrent_list
+
+      expect(data.first['seq_dl']).to eq true
+      expect(data.last['seq_dl']).to eq true
+    end
+  end
+
+  context "#toggle_first_last_piece_priority" do
+
+    it "turn on first/last piece priority for multiple torrents" do
+      pending('pending bugfix: https://github.com/qbittorrent/qBittorrent/issues/3424')
+      hash, name = given_a_downloading_torrent
+      hash2, name2 = given_another_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+
+      data = client.torrent_list
+
+      expect(data.first['f_l_piece_prio']).to eq false
+      expect(data.last['f_l_piece_prio']).to eq false
+
+      client.toggle_first_last_piece_priority [hash, hash2]
+      sleep 5
+
+      data = client.torrent_list
+
+      expect(data.first['f_l_piece_prio']).to eq true
+      expect(data.last['f_l_piece_prio']).to eq true
+    end
+  end
+
+  context "#set_force_start" do
+
+    it "sets/unsets the force start flag on one or more torrents" do
+      hash, name = given_a_paused_downloading_torrent
+      hash2, name2 = given_another_paused_downloading_torrent
+
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+
+      data = client.torrent_list
+
+      expect(data.first['force_start']).to eq false
+      expect(data.last['force_start']).to eq false
+
+      client.set_force_start [hash, hash2], true
+
+      data = client.torrent_list
+
+      expect(data.first['force_start']).to eq true
+      expect(data.last['force_start']).to eq true
+
+      client.set_force_start [hash, hash2], false
+
+      data = client.torrent_list
+
+      expect(data.first['force_start']).to eq false
+      expect(data.last['force_start']).to eq false
     end
   end
 
