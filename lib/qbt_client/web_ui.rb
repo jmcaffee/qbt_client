@@ -17,7 +17,9 @@ module QbtClient
   class WebUI
     include HTTParty
 
-    #debug_output $stdout
+    if ENV["DEBUG"]
+      debug_output $stdout
+    end
 
     ###
     # constructor
@@ -27,9 +29,39 @@ module QbtClient
       @port       = port
       @user       = user
       @pass       = pass
+      @sid        = nil
 
-      self.class.digest_auth(user, pass)
+      #self.class.digest_auth(user, pass)
       self.class.base_uri "#{ip}:#{port}"
+      authenticate
+      self.class.cookies.add_cookies(@sid)
+    end
+
+
+    ###
+    # Authenticate with the server
+    #
+    # Login with username and password.
+    # Store returned SID cookie value used as auth token for later calls.
+    #
+    def authenticate
+      options = {
+        body: "username=#{@user}&password=#{@pass}"
+      }
+
+      # Have to clear out the cookies or the old SID gets sent while requesting
+      # the new SID (and it fails).
+      self.class.cookies.clear
+
+      res = self.class.post('/login', options)
+      if res.success?
+        token = res.headers["Set-Cookie"]
+        raise "Login failed" if token.nil?
+
+        token = token.split(";")[0]
+        #token = token.split("SID=")[1]
+        @sid = token
+      end
     end
 
     ###
@@ -69,7 +101,7 @@ module QbtClient
     #
     def torrent_list
       self.class.format :json
-      self.class.get('/json/torrents').parsed_response
+      self.class.get('/query/torrents').parsed_response
     end
 
     def torrent_data torrent_hash
@@ -104,7 +136,7 @@ module QbtClient
     #
     def properties torrent_hash
       self.class.format :json
-      self.class.get('/json/propertiesGeneral/' + torrent_hash).parsed_response
+      self.class.get('/query/propertiesGeneral/' + torrent_hash).parsed_response
     end
 
     ###
@@ -136,7 +168,7 @@ module QbtClient
     #
     def trackers torrent_hash
       self.class.format :json
-      self.class.get('/json/propertiesTrackers/' + torrent_hash).parsed_response
+      self.class.get('/query/propertiesTrackers/' + torrent_hash).parsed_response
     end
 
     ###
@@ -173,7 +205,7 @@ module QbtClient
     #
     def contents torrent_hash
       self.class.format :json
-      self.class.get('/json/propertiesFiles/' + torrent_hash).parsed_response
+      self.class.get('/query/propertiesFiles/' + torrent_hash).parsed_response
     end
 
     ###
@@ -187,7 +219,7 @@ module QbtClient
     #
     def transfer_info
       self.class.format :json
-      self.class.get('/json/transferInfo').parsed_response
+      self.class.get('/query/transferInfo').parsed_response
     end
 
     ###
@@ -269,7 +301,7 @@ module QbtClient
     #
     def preferences
       self.class.format :json
-      self.class.get('/json/preferences').parsed_response
+      self.class.get('/query/preferences').parsed_response
     end
 
     ###
@@ -303,7 +335,7 @@ module QbtClient
     # Pause all torrents
     #
     def pause_all
-      self.class.post('/command/pauseall')
+      self.class.post('/command/pauseAll')
     end
 
     ###
@@ -321,7 +353,7 @@ module QbtClient
     # Resume downloading/seeding of all torrents
     #
     def resume_all
-      self.class.post('/command/resumeall')
+      self.class.post('/command/resumeAll')
     end
 
     ###
@@ -539,10 +571,12 @@ module QbtClient
       self.class.format :json
 
       options = {
-        body: "hash=#{torrent_hash}"
+        body: "hashes=#{torrent_hash}"
       }
 
-      self.class.post('/command/getTorrentDlLimit', options).parsed_response
+      self.class
+        .post('/command/getTorrentsDlLimit', options)
+        .parsed_response[torrent_hash]
     end
 
     ###
@@ -554,13 +588,13 @@ module QbtClient
     # limit: integer (bytes)
     #
     def set_download_limit torrent_hash, limit
-      query = ["hash=#{torrent_hash}", "limit=#{limit}"]
+      query = ["hashes=#{torrent_hash}", "limit=#{limit}"]
 
       options = {
         body: query.join('&')
       }
 
-      self.class.post('/command/setTorrentDlLimit', options)
+      self.class.post('/command/setTorrentsDlLimit', options)
     end
 
     ###
@@ -574,10 +608,12 @@ module QbtClient
       self.class.format :json
 
       options = {
-        body: "hash=#{torrent_hash}"
+        body: "hashes=#{torrent_hash}"
       }
 
-      self.class.post('/command/getTorrentUpLimit', options).parsed_response
+      self.class
+        .post('/command/getTorrentsUpLimit', options)
+        .parsed_response[torrent_hash]
     end
 
     ###
@@ -589,13 +625,13 @@ module QbtClient
     # limit: integer (bytes)
     #
     def set_upload_limit torrent_hash, limit
-      query = ["hash=#{torrent_hash}", "limit=#{limit}"]
+      query = ["hashes=#{torrent_hash}", "limit=#{limit}"]
 
       options = {
         body: query.join('&')
       }
 
-      self.class.post('/command/setTorrentUpLimit', options)
+      self.class.post('/command/setTorrentsUpLimit', options)
     end
 
   private

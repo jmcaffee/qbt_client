@@ -20,7 +20,7 @@ def test_user
 end
 
 def test_pass
-  'abc'
+  'abcabc'
 end
 
 def test_torrent_url
@@ -147,6 +147,11 @@ end
 
 def enable_queueing client, enable
   client.set_preferences({ "queueing_enabled" => enable })
+end
+
+def queueing_enabled? client
+  prefs = client.preferences
+  prefs['queueing_enabled']
 end
 
 def delete_all_torrents

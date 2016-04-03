@@ -28,7 +28,7 @@ require 'qtb_client'
 ip   = 'http://127.0.0.1' # Protocol is required.
 port = 8083
 user = 'admin'
-pass = 'abc'
+pass = 'abcabc'  # Min length for password is 6 chars
 
 client = QtbClient::WebUI.new(ip, port, user, pass)
 ```
@@ -59,7 +59,7 @@ To run the tests, you'll need to have qBittorrent installed locally, WebUI
 turned on, and the credentials set to:
 
 - user: admin
-- pass: abc
+- pass: abcabc
 
 The tests assume that qBittorrent is running at 127.0.0.1, port 8083.
 

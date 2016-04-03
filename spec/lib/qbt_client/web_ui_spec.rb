@@ -153,8 +153,8 @@ describe WebUI do
       res = client.transfer_info
 
       expect(res.class).to eq Hash
-      expect(res['dl_info']).to_not eq nil
-      expect(res['up_info']).to_not eq nil
+      expect(res['dl_info_data']).to_not eq nil
+      expect(res['up_info_data']).to_not eq nil
     end
   end
 
@@ -193,7 +193,7 @@ describe WebUI do
 
     it "fails when not provided a Hash" do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
-      expect{ client.set_preferences("\"save_path\":\"#{save_path}\"") }.to raise_exception
+      expect{ client.set_preferences("\"save_path\":\"#{save_path}\"") }.to raise_exception( TypeError )
     end
   end
 
@@ -356,6 +356,8 @@ describe WebUI do
       #puts "State: #{data['state']}"
       state_is_expected = (state == 'checkingDL' or state == 'checkingUP')
 
+      puts "    expected state: checkingDL or checkingUP"
+      puts "    actual state:   #{state}"
       expect(state_is_expected).to eq true
     end
   end
@@ -371,13 +373,14 @@ describe WebUI do
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
       sleep 2
+      puts "    queuing enabled: #{queueing_enabled?(client)}"
 
       # Get initial priority.
       prio = get_torrent_info client, hash2, 'priority'
 
       # Increase the priority.
       client.increase_priority hash2
-      sleep 2
+      sleep 5
 
       # Verify it got better (lower number).
       prio_after_increase = get_torrent_info client, hash2, 'priority'
@@ -400,13 +403,14 @@ describe WebUI do
       # Turn on queueing or priority is always '*'.
       enable_queueing client, true
       sleep 2
+      puts "    queuing enabled: #{queueing_enabled?(client)}"
 
       # Get initial priority.
       prio = get_torrent_info client, hash, 'priority'
 
       # Decrease the priority.
       client.decrease_priority hash
-      sleep 2
+      sleep 5
 
       # Verify it got worse (higher number).
       prio_after_decrease = get_torrent_info client, hash, 'priority'
@@ -443,7 +447,8 @@ describe WebUI do
       # Turn queueing back off.
       enable_queueing client, false
 
-      expect(prio_after_increase == '1').to eq true
+      puts "    prio_after_increase: #{prio_after_increase}"
+      expect(prio_after_increase == 1).to eq true
     end
   end
 
@@ -472,7 +477,8 @@ describe WebUI do
       # Turn queueing back off.
       enable_queueing client, false
 
-      expect(prio_after_decrease == '2').to eq true
+      puts "    prio_after_decrease: #{prio_after_decrease}"
+      expect(prio_after_decrease == 2).to eq true
     end
   end
 
@@ -569,6 +575,8 @@ describe WebUI do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       limit = client.download_limit hash
 
+      puts "    limit is #{limit}"
+
       expect(limit.integer?).to eq true
     end
   end
@@ -584,6 +592,9 @@ describe WebUI do
       client.set_download_limit hash, expected_limit
 
       actual_limit = client.download_limit hash
+
+      puts "    expected limit is #{expected_limit}"
+      puts "    actual limit is #{actual_limit}"
 
       expect(expected_limit == actual_limit).to eq true
 
