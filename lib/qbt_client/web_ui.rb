@@ -32,7 +32,9 @@ module QbtClient
       @sid        = nil
 
       #self.class.digest_auth(user, pass)
-      self.class.base_uri "#{ip}:#{port}"
+      host = "#{ip}:#{port}"
+      self.class.base_uri host
+      self.class.headers "Referer" => host
       authenticate
       self.class.cookies.add_cookies(@sid)
     end
@@ -56,12 +58,44 @@ module QbtClient
       res = self.class.post('/login', options)
       if res.success?
         token = res.headers["Set-Cookie"]
-        raise "Login failed" if token.nil?
+        raise QbtClientError.new("Login failed: no SID (cookie) returned") if token.nil?
 
         token = token.split(";")[0]
-        #token = token.split("SID=")[1]
         @sid = token
+      else
+        raise QbtClientError.new(res)
       end
+    end
+
+    ###
+    # Get the application's API version
+    #
+    # Returns an integer
+    #
+    def api_version
+      self.class.format :json
+      self.class.get('/version/api').parsed_response
+    end
+
+    ###
+    # Get the application's minimum API version
+    #
+    # Returns an integer
+    #
+    def api_min_version
+      self.class.format :json
+      self.class.get('/version/api_min').parsed_response
+    end
+
+    ###
+    # Get the application's version
+    #
+    # Returns an integer
+    #
+    def qbittorrent_version
+      self.class.format :plain
+      self.class.get('/version/qbittorrent').parsed_response
+      #self.class.get('/version/qbittorrent')
     end
 
     ###

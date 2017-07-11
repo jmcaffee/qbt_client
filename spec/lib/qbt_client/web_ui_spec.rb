@@ -8,6 +8,42 @@ describe WebUI do
     sleep 1
   end
 
+  context "#api_version" do
+
+    it "return the current API version" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      api_ver = client.api_version
+
+      puts "    api version: #{api_ver}"
+      expect(api_ver.integer?).to eq true
+    end
+  end
+
+  context "#api_min_version" do
+
+    it "return the minimum API version" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      api_ver = client.api_min_version
+
+      puts "    minimum api version: #{api_ver}"
+      expect(api_ver.integer?).to eq true
+    end
+  end
+
+  context "#qbittorrent_version" do
+
+    it "return the application version" do
+      hash, name = given_a_paused_downloading_torrent
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+      app_ver = client.qbittorrent_version
+
+      puts "    qbittorrent version: #{app_ver}"
+      expect(app_ver.start_with?('v')).to eq true
+    end
+  end
+
   context "#torrent_list" do
 
     it "returns array of torrents" do
@@ -185,7 +221,9 @@ describe WebUI do
 
       # Read preferences back and verify update
       res = client.preferences
-      expect(res["save_path"]).to eq save_path
+      # NOTE: qBitTorrent now tacks on a trailing file separator to its
+      # save path if it doesn't already exist.
+      expect(res["save_path"]).to eq (save_path + "/")
 
       # Set the save_path back to original value
       res = client.set_preferences({ "save_path"=>orig_save_path })
@@ -221,7 +259,7 @@ describe WebUI do
       client = WebUI.new(test_ip, test_port, test_user, test_pass)
       res = client.pause_all
       # Give app a chance to update
-      sleep 2
+      sleep 4
 
       data = client.torrent_data hash
       #print_response data
@@ -530,6 +568,10 @@ describe WebUI do
       client.set_global_download_limit expected_limit
 
       actual_limit = client.global_download_limit
+
+      puts "         old limit: #{old_limit}"
+      puts "    expected limit: #{expected_limit}"
+      puts "      actual limit: #{actual_limit}"
 
       expect(expected_limit == actual_limit).to eq true
 
