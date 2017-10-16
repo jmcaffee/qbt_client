@@ -675,6 +675,22 @@ describe WebUI do
     end
   end
 
+  context '#sync' do
+    it 'should first return a full update' do
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+
+      expect(client.sync).to have_key('full_update')
+    end
+
+    it 'should not return full update for consecutive requests' do
+      client = WebUI.new(test_ip, test_port, test_user, test_pass)
+
+      result = client.sync
+      expect(result).to_not be_nil
+      expect(client.sync(result['rid'])).to_not have_key 'full_update'
+    end
+  end
+
   #context "test" do
 
   #  it "tests a torrent" do

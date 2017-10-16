@@ -138,6 +138,45 @@ module QbtClient
       self.class.get('/query/torrents').parsed_response
     end
 
+    # Polls the client for incremental changes.
+    #
+    # @param interval Update interval in seconds.
+    #
+    # @yield [Hash] the return result of #sync.
+    def poll interval: 10, &block
+      raise '#poll requires a block' unless block_given?
+
+      response_id = 0
+
+      loop do
+        res = self.sync response_id
+
+        if res
+          yield res
+        end
+
+        sleep interval
+      end
+    end
+
+    # Requests partial data from the client.
+    #
+    # @param response_id [Integer] Response ID. Used to keep track of what has
+    #   already been sent by qBittorrent.
+    #
+    # @return [Hash, nil] parsed json data on success, nil otherwise
+    #
+    # @note Read more about `response_id` at https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-Documentation#get-partial-data
+    def sync response_id = 0
+      req = self.class.get '/sync/maindata', format: :json,
+                           query: { rid: response_id }
+      res = req.parsed_response
+
+      if req.success?
+        return res
+      end
+    end
+
     def torrent_data torrent_hash
       torrents = torrent_list
 
