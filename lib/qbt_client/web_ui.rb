@@ -34,7 +34,7 @@ module QbtClient
       #self.class.digest_auth(user, pass)
       host = "#{ip}:#{port}"
       self.class.base_uri host
-      self.class.headers "Referer" => host
+      self.class.headers "Referer" => "http://#{host}"
       authenticate
       self.class.cookies.add_cookies(@sid)
     end
