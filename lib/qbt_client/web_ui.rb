@@ -152,6 +152,8 @@ module QbtClient
         res = self.sync response_id
 
         if res
+          response_id = res['rid']
+          
           yield res
         end
 
