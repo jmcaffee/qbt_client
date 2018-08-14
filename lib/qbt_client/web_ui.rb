@@ -7,7 +7,7 @@
 # Website::   http://ktechsystems.com
 ##############################################################################
 
-require 'json/pure'
+require 'multi_json'
 require 'httparty'
 require 'digest'
 
