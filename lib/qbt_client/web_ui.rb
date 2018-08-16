@@ -490,6 +490,18 @@ module QbtClient
       self.class.post('/command/recheck', options)
     end
 
+    # Set location for a torrent
+    def set_location(torrent_hashes, path)
+      torrent_hashes = Array(torrent_hashes)
+      torrent_hashes = torrent_hashes.join('|')
+
+      options = {
+        body: { "hashes" => torrent_hashes, "location" => path },
+      }
+
+      self.class.post('/command/setLocation', options)
+    end
+
     ###
     # Increase the priority of one or more torrents
     #
